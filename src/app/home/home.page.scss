@@ -56,11 +56,14 @@
   display:flex;
   flex-direction: column;
 }
-
-
 ion-header::after {
   background-image: none;
 }
+
+ion-datetime::after{
+  white-space: unset;
+}
+
 .input-bottom {
   z-index: 2;
   position: absolute;
@@ -92,9 +95,10 @@ ion-header::after {
   font-size: inherit;
 }
 .center{
-  margin:auto;
-  display:flex;
-  flex-direction: row;
+  margin:0;
+  text-align: center;
+  align-items: center;
+  justify-items: center;
 }
 .center-text{
   margin-top:5mm;

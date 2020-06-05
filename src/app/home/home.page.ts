@@ -6,8 +6,27 @@ import { AlertController } from '@ionic/angular';
   styleUrls: ['home.page.scss'],
 })
 export class HomePage {
+  public booking_detail: Object = {
+    book_option: "book"
+  }
 
-  constructor(public alertController: AlertController) { }
+  constructor(public alertController: AlertController) {
+
+  }
+
+  updateBookOption(option) {
+
+    const element = document.getElementById("datetime");
+    if (element) {
+      element.setAttribute("disabled", option === "book" ? "true" : "false");
+      console.log(element);
+    }
+
+    this.booking_detail = {
+      ...this.booking_detail,
+      book_option: option
+    }
+  }
 
   async setPassengers() {
     const alert = await this.alertController.create({
@@ -37,10 +56,21 @@ export class HomePage {
   updatePassenger(count) {
     const passengerCountElement = document.getElementById("passenger_count");
     passengerCountElement.innerHTML = count;
+    this.booking_detail = {
+      ...this.booking_detail,
+      passengers: count
+    }
   }
 
   setPickupTime() {
     document.getElementById("datetime").click();
+  }
+
+  updatePickupTime(time) {
+    this.booking_detail = {
+      ...this.booking_detail,
+      time: time
+    }
   }
 
   calculateFare() {

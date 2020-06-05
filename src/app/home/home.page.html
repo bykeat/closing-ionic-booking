@@ -36,7 +36,7 @@
     </ion-row>
     <ion-row>
       <ion-column>
-        <ion-radio-group>
+        <ion-radio-group id="book_option" value="book" (ionChange)="updateBookOption($event.target.value)">
           <ion-grid>
             <ion-row>
               <ion-column>
@@ -61,28 +61,29 @@
   <ion-grid class="input-bottom">
     <ion-row>
       <ion-col size="4">
-        <ion-item class="center">
-          <ion-icon name="calendar"></ion-icon>
-          <ion-datetime id="datetime"></ion-datetime>
-        </ion-item>
-        <ion-item (click)='setPickupTime()'>
-          When
-        </ion-item>
+        <ion-item-group>
+          <ion-item class="ion-no-padding" (click)='setPickupTime()'>
+            <ion-icon name="calendar"></ion-icon>
+          </ion-item>
+          <ion-item class="ion-no-padding">
+            <ion-datetime id="datetime" disabled="true" (ionChange)='updatePickupTime($event.target.value)'
+              placeholder="When">
+            </ion-datetime>
+          </ion-item>
+        </ion-item-group>
       </ion-col>
       <ion-col size="4">
-        <ion-item class="center" (click)='setPassengers()'>
+        <ion-item class="ion-no-padding" (click)='setPassengers()'>
           <ion-icon name="people"></ion-icon>
         </ion-item>
-        <ion-item class="font" (click)='setPassengers()'>
+        <ion-item class="font ion-no-padding" (click)='setPassengers()'>
           <div id="passenger_count">0</div>
         </ion-item>
       </ion-col>
       <ion-col size="4">
         <ion-item>
-          <ion-icon class="" name="ellipsis-horizontal"></ion-icon>
-        </ion-item>
-        <ion-item>
-          More
+          <ion-icon name="ellipsis-horizontal">
+          </ion-icon>
         </ion-item>
       </ion-col>
     </ion-row>
