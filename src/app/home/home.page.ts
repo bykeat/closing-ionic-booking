@@ -1,5 +1,19 @@
+
 import { Component } from '@angular/core';
-import { AlertController } from '@ionic/angular';
+import { AlertController, Platform } from '@ionic/angular';
+//import { HTTP } from '@ionic-native/http/ngx'; //android only
+import { Geolocation } from '@ionic-native/geolocation/ngx';
+import {
+  GoogleMaps,
+  GoogleMap,
+  GoogleMapsEvent,
+  GoogleMapOptions,
+  CameraPosition,
+  MarkerOptions,
+  Marker,
+  Environment
+} from '@ionic-native/google-maps';
+import { HttpClient } from "@angular/common/http";
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
@@ -10,8 +24,62 @@ export class HomePage {
     book_option: "book"
   }
 
-  constructor(public alertController: AlertController) {
+  map: GoogleMap;
 
+  constructor(public alertController: AlertController, private http: HttpClient, private geolocation: Geolocation, private platform: Platform) {
+
+  }
+  async ngOnInit() {
+    await this.platform.ready();
+    await this.getLocation();
+
+  }
+  loadMap(lat, lng) {
+
+    // This code is necessary for browser
+    // hk : error which environment is null, only works on deployed in production 
+    // Environment.setEnv({
+    //   'API_KEY_FOR_BROWSER_RELEASE': 'AIzaSyCJ1tE4-pmU3OWF0OurpQxhlW4k_W8bSLM',
+    //   'API_KEY_FOR_BROWSER_DEBUG': 'AIzaSyCJ1tE4-pmU3OWF0OurpQxhlW4k_W8bSLM'
+    // });
+    //cordova
+
+
+    let mapOptions: GoogleMapOptions = {
+      camera: {
+        target: {
+          lat: lat,
+          lng: lng
+        },
+        zoom: 18,
+        tilt: 30
+      }
+    };
+    console.log("map creating...");
+    this.map = GoogleMaps.create('map_canvas', mapOptions);
+    console.log("map created");
+    // let marker: Marker = this.map.addMarkerSync({
+    //   title: 'Your pick up point',
+    //   icon: 'blue',
+    //   animation: 'DROP',
+    //   position: {
+    //     lat: lat,
+    //     lng: lng
+    //   }
+    // });
+
+    // marker.on(GoogleMapsEvent.MARKER_CLICK).subscribe(() => {
+    //   alert('clicked');
+    // });
+  }
+
+  getLocation() {
+    this.geolocation.getCurrentPosition().then((resp) => {
+      this.loadMap(resp.coords.latitude,
+        resp.coords.longitude);
+    }).catch((error) => {
+      console.log('Error getting location', error);
+    });
   }
 
   updateBookOption(option) {
@@ -74,8 +142,16 @@ export class HomePage {
   }
 
   calculateFare() {
-    const pickupDateElement = document.getElementById("datetime");
-    const passengerCountElement = document.getElementById("passenger_count");
-    const routeDistanceElement = document.getElementById("route_distance");
+    this.http.get('http://localhost:8000/route_estimation', {}).toPromise()
+      .then(data => {
+        console.log("khk", data);
+      })
+      .catch(error => {
+
+        console.log(error.status);
+        console.log(error.error); // error message as string
+        console.log(error.headers);
+
+      });
   }
 }
