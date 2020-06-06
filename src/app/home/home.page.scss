@@ -10,7 +10,12 @@
   font-size: 20px;
   line-height: 26px;
 }
-
+.item {
+  contain:none;
+}
+.datetime{
+    contain:none;
+}
 .icon-right {
   color:white;
   position: absolute;

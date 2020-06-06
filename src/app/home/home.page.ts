@@ -11,20 +11,31 @@ import {
   CameraPosition,
   MarkerOptions,
   Marker,
-  Environment
+  Environment,
+  LatLng,
+  MarkerIcon
 } from '@ionic-native/google-maps';
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
 })
 export class HomePage {
-  public booking_detail: Object = {
-    book_option: "book"
-  }
+  str_pickup: string = "";
+  str_destination: string = "";
+  nm_passengers: number = 0;
+  bl_preBook: string = "false";
+  dt_pickup: number;
+  str_note: string = "";
+  timer: Timeout = null;
+  ltlg_pickup: LatLng;
+  ltlg_destination: LatLng;
 
-  map: GoogleMap;
+  ui_markers: Marker;
+  ui_marker_destination: Marker;
+
+  private map;
 
   constructor(public alertController: AlertController, private http: HttpClient, private geolocation: Geolocation, private platform: Platform) {
 
@@ -34,82 +45,48 @@ export class HomePage {
     await this.getLocation();
 
   }
-  loadMap(lat, lng) {
-
-    // This code is necessary for browser
-    // hk : error which environment is null, only works on deployed in production 
-    // Environment.setEnv({
-    //   'API_KEY_FOR_BROWSER_RELEASE': 'AIzaSyCJ1tE4-pmU3OWF0OurpQxhlW4k_W8bSLM',
-    //   'API_KEY_FOR_BROWSER_DEBUG': 'AIzaSyCJ1tE4-pmU3OWF0OurpQxhlW4k_W8bSLM'
-    // });
-    //cordova
 
 
-    let mapOptions: GoogleMapOptions = {
-      camera: {
-        target: {
-          lat: lat,
-          lng: lng
-        },
-        zoom: 18,
-        tilt: 30
-      }
-    };
-    console.log("map creating...");
-    this.map = GoogleMaps.create('map_canvas', mapOptions);
-    console.log("map created");
-    // let marker: Marker = this.map.addMarkerSync({
-    //   title: 'Your pick up point',
-    //   icon: 'blue',
-    //   animation: 'DROP',
-    //   position: {
-    //     lat: lat,
-    //     lng: lng
-    //   }
-    // });
+  // async setPassengers() {
+  //   const alert = await this.alertController.create({
+  //     header: "How many going?",
+  //     inputs: [
+  //       {
+  //         name: "passengers",
+  //         type: "number",
+  //       }
+  //     ],
+  //     buttons: [
+  //       {
+  //         text: "Set",
+  //         handler: (e) => {
+  //           nm_passengers = e.passengers;
+  //         },
 
-    // marker.on(GoogleMapsEvent.MARKER_CLICK).subscribe(() => {
-    //   alert('clicked');
-    // });
-  }
+  //       }, {
+  //         text: "Cancel",
+  //         role: "cancel"
+  //       }
+  //     ]
+  //   });
+  //   await alert.present();
+  // }
 
-  getLocation() {
-    this.geolocation.getCurrentPosition().then((resp) => {
-      this.loadMap(resp.coords.latitude,
-        resp.coords.longitude);
-    }).catch((error) => {
-      console.log('Error getting location', error);
-    });
-  }
 
-  updateBookOption(option) {
-
-    const element = document.getElementById("datetime");
-    if (element) {
-      element.setAttribute("disabled", option === "book" ? "true" : "false");
-      console.log(element);
-    }
-
-    this.booking_detail = {
-      ...this.booking_detail,
-      book_option: option
-    }
-  }
-
-  async setPassengers() {
+  async showNote() {
     const alert = await this.alertController.create({
-      header: "How many going?",
+      header: "Leave note",
       inputs: [
         {
-          name: "passengers",
-          type: "number",
+          name: "message",
+          type: "string",
         }
       ],
       buttons: [
         {
-          text: "Set",
+          text: "Confirm",
           handler: (e) => {
-            this.updatePassenger(e.passengers);
+            this.str_note = e.message;
           },
 
         }, {
@@ -121,27 +98,133 @@ export class HomePage {
     await alert.present();
   }
 
-  updatePassenger(count) {
-    const passengerCountElement = document.getElementById("passenger_count");
-    passengerCountElement.innerHTML = count;
-    this.booking_detail = {
-      ...this.booking_detail,
-      passengers: count
-    }
+  test() {
+    console.log(this.dt_pickup);
+  }
+
+  addPassenger() {
+    this.nm_passengers++;
+  }
+
+  reducePassenger() {
+    this.nm_passengers--;
   }
 
   setPickupTime() {
     document.getElementById("datetime").click();
   }
 
-  updatePickupTime(time) {
-    this.booking_detail = {
-      ...this.booking_detail,
-      time: time
+  loadMap(lat, lng) {
+    this.ltlg_pickup = new LatLng(lat, lng);
+    this.map = new google.maps.Map(
+      document.getElementById('map'), { zoom: 18, center: this.ltlg_pickup, clickableIcons: false });
+
+    if (this.ui_marker_pickup) {
+      this.ui_marker_pickup.setMap(null);
     }
+    this.ui_marker_pickup = new google.maps.Marker({
+      position: this.ltlg_pickup
+    });
+    this.ui_marker_pickup.setMap(this.map);
+
+    var geocoder = new google.maps.Geocoder;
+    this.geocodeLatLng(geocoder, this.ltlg_pickup, this.map, this.updatePickupName.bind(this));
+  }
+
+  focusNewLocation() {
+    //future development
+    if (this.timer) {
+      clearTimeout(this.timer);
+      console.log("timeout cleared")
+      this.timer = null
+    }
+    this.timer = setTimeout(this.setDestination.bind(this), 2000);
+  }
+
+  setDestination() {
+    var place = new google.maps.places.PlacesService(this.map);
+    var request = { query: this.str_destination, fields: ["geometry"] };
+    place.findPlaceFromQuery(request, this.updateDestinationData.bind(this))
+  }
+
+  updateDestinationData(results, status) {
+
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      this.map.setCenter(results[0].geometry.location);
+      this.ltlg_destination = results[0].geometry.location;
+
+      if (this.ui_marker_destination) {
+        this.ui_marker_destination.setMap(null);
+      }
+      this.ui_marker_destination = new google.maps.Marker({
+        position: results[0].geometry.location,
+      });
+      this.ui_marker_destination.setMap(this.map);
+
+      var geocoder = new google.maps.Geocoder;
+      this.geocodeLatLng(geocoder, this.ltlg_destination, this.map, this.updateDestinationName.bind(this));
+    }
+
+  }
+
+  updatePickupName(name) {
+    this.str_pickup = name;
+  }
+  updateDestinationName(name) {
+    this.str_destination = name;
+  }
+
+
+  geocodeLatLng(geocoder, ltlg_location, map, callback) {
+    geocoder.geocode({ 'location': ltlg_location }, function (results, status) {
+      if (status === 'OK') {
+        if (results[0]) {
+          map.setZoom(17);
+          callback(results[0].formatted_address)
+        } else {
+          window.alert('No results found');
+        }
+      } else {
+        window.alert('Geocoder failed due to: ' + status);
+      }
+    });
+  }
+
+  getLocation() {
+    this.geolocation.getCurrentPosition().then((resp) => {
+      this.loadMap(resp.coords.latitude,
+        resp.coords.longitude);
+    }).catch((error) => {
+      console.log('Error getting location', error);
+    });
   }
 
   calculateFare() {
+    console.log("pickup", this.str_pickup,
+      this.ltlg_pickup,
+      "dest",
+      this.str_destination,
+      this.ltlg_destination,
+      "passengers",
+      this.nm_passengers, "book type",
+      this.bl_preBook, "pickup date",
+      this.dt_pickup, "note", this.str_note);
+    return;
+    var directionsService = new google.maps.DirectionsService();
+    var directionsRenderer = new google.maps.DirectionsRenderer();
+
+    directionsRenderer.setMap(this.map);
+    directionsService.route({
+      origin: { query: "ang mo kio 1" },
+      destination: { query: "ang mo kio hub" },
+      travelMode: "DRIVING"
+    }, function (response, status) {
+      if (status === 'OK') {
+        directionsRenderer.setDirections(response);
+      } else {
+        window.alert('Directions request failed due to ' + status);
+      }
+    })
     this.http.get('http://localhost:8000/route_estimation', {}).toPromise()
       .then(data => {
         console.log("khk", data);

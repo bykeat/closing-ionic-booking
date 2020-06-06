@@ -4,8 +4,10 @@
   <ion-icon class="icon-left" name="menu"></ion-icon>
   <ion-title class="center-text">Book a Ride</ion-title>
   <ion-icon class="icon-right" name="help-buoy"></ion-icon>
+
 </ion-header>
-<ion-content [fullscreen]="true" id="map" class="ion-align-items-center">
+<ion-content [fullscreen]="true" id="" class="ion-align-items-center">
+
   <ion-grid class="input-top">
     <ion-row>
       <ion-column>
@@ -16,7 +18,7 @@
       </ion-column>
       <ion-column>
         <ion-item>
-          <ion-input placeholder="Enter pick up location">
+          <ion-input [(ngModel)]="str_pickup" placeholder="Enter pick up location">
           </ion-input>
         </ion-item>
       </ion-column>
@@ -29,26 +31,27 @@
       </ion-column>
       <ion-column>
         <ion-item>
-          <ion-input placeholder="Enter your destination">
+          <ion-input [(ngModel)]="str_destination" placeholder="Enter your destination" (focusout)="focusNewLocation()"
+            (keyup.enter)="focusNewLocation()">
           </ion-input>
         </ion-item>
       </ion-column>
     </ion-row>
     <ion-row>
       <ion-column>
-        <ion-radio-group id="book_option" value="book" (ionChange)="updateBookOption($event.target.value)">
+        <ion-radio-group [(ngModel)]=" bl_preBook" id="book_option">
           <ion-grid>
             <ion-row>
               <ion-column>
                 <ion-item>
                   <ion-label>Book Now</ion-label>
-                  <ion-radio value="book" check="true"></ion-radio>
+                  <ion-radio value="false"></ion-radio>
                 </ion-item>
               </ion-column>
               <ion-column>
                 <ion-item>
                   <ion-label>Pre-book </ion-label>
-                  <ion-radio value="prebook"></ion-radio>
+                  <ion-radio value="true"></ion-radio>
                 </ion-item>
               </ion-column>
             </ion-row>
@@ -62,12 +65,12 @@
     <ion-row>
       <ion-col size="4">
         <ion-item-group>
-          <ion-item class="ion-no-padding" (click)='setPickupTime()'>
+          <ion-item class="ion-no-padding" (click)='setPickupTime()' [disabled]="bl_preBook === 'false'">
             <ion-icon name="calendar"></ion-icon>
           </ion-item>
-          <ion-item class="ion-no-padding">
-            <ion-datetime id="datetime" disabled="true" (ionChange)='updatePickupTime($event.target.value)'
-              placeholder="When">
+          <ion-item class="ion-no-padding" [disabled]="bl_preBook === 'false'">
+            <ion-datetime class="ion-no-padding" displayFormat="DD MMM YYYY HH:mm" id="datetime" [(ngModel)]="dt_pickup"
+              placeholder="When?" (ionChange)="test()">
             </ion-datetime>
           </ion-item>
         </ion-item-group>
@@ -76,13 +79,16 @@
         <ion-item class="ion-no-padding" (click)='setPassengers()'>
           <ion-icon name="people"></ion-icon>
         </ion-item>
-        <ion-item class="font ion-no-padding" (click)='setPassengers()'>
-          <div id="passenger_count">0</div>
+        <ion-item class="ion-no-padding">
+          <ion-button (click)='reducePassenger()'>-</ion-button>
+          <ion-label class="font ion-no-padding">{{nm_passengers}}</ion-label>
+          <ion-button (click)='addPassenger()'>+</ion-button>
         </ion-item>
+
       </ion-col>
       <ion-col size="4">
         <ion-item>
-          <ion-icon name="ellipsis-horizontal">
+          <ion-icon name="document-text" (click)="showNote()">
           </ion-icon>
         </ion-item>
       </ion-col>
@@ -91,5 +97,5 @@
       <ion-button class="fill-width" (click)="calculateFare()">Calculate Fare</ion-button>
     </ion-row>
   </ion-grid>
-  <google-map height="100%" width="100%"></google-map>
+  <div id="map"></div>
 </ion-content>
